@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste</title>
+    <style>
+        #pkName {
+            width: 15%;
+        }
+
+        .resultado-botao {
+            cursor: pointer;
+            padding: 5px;
+            width: 14.5%;
+            background-color: lightgrey;
+            margin-left: 2px;
+        }
+
+        .resultado-botao:hover {
+            background-color: rgb(227, 227, 227);
+        }
+
+        .resultado-selecionado {
+            background-color: rgb(232, 232, 232);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="search-container">
+        <input type="text" id="pkName" oninput="buscar()">
+        <div id="resultados"></div>
+    </div>
+
+    <script>
+        let resultadosFiltrados = [];
+        let resultadoSelecionadoIndex = -1;
+
+        async function buscar() {
+            var pkName = document.querySelector('#pkName').value.trim().toLowerCase();
+
+            if (pkName === "") {
+                document.querySelector('#resultados').innerHTML = "";
+                return;
+            }
+
+            const apiUrl = `https://pokeapi.co/api/v2/pokemon?limit=1018`;
+
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data.results) {
+                    resultadosFiltrados = data.results.filter(pokemon =>
+                        pokemon.name.startsWith(pkName)
+                    ).slice(0, 3); 
+
+                    document.querySelector('#resultados').innerHTML = "";
+
+                    resultadosFiltrados.forEach((pokemon, index) => {
+                        const resultadoBotao = document.createElement('div');
+                        resultadoBotao.textContent = pokemon.name;
+                        resultadoBotao.classList.add('resultado-botao');
+                        resultadoBotao.addEventListener('click', () => {
+                            selecionarResultado(index);
+                            document.querySelector('#pkName').value = resultadosFiltrados[index].name;
+                            document.querySelector('#resultados').innerHTML = "";
+                        });
+                        document.querySelector('#resultados').appendChild(resultadoBotao);
+                    });
+
+                    document.addEventListener('keydown', handleKeyDown);
+                }
+            } catch (error) {
+                console.error('Ocorreu um erro:', error);
+            }
+        }
+
+        function selecionarResultado(index) {
+            if (resultadoSelecionadoIndex >= 0) {
+                document
+                    .querySelectorAll('.resultado-botao')
+                [resultadoSelecionadoIndex].classList.remove('resultado-selecionado');
+            }
+
+            resultadoSelecionadoIndex = index;
+
+            if (resultadoSelecionadoIndex >= 0) {
+                document
+                    .querySelectorAll('.resultado-botao')
+                [resultadoSelecionadoIndex].classList.add('resultado-selecionado');
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (resultadosFiltrados.length === 0) {
+                return;
+            }
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    if (resultadoSelecionadoIndex < resultadosFiltrados.length - 1) {
+                        selecionarResultado(resultadoSelecionadoIndex + 1);
+                    } else {
+                        selecionarResultado(0); 
+                    }
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (resultadoSelecionadoIndex > 0) {
+                        selecionarResultado(resultadoSelecionadoIndex - 1);
+                    } else {
+                        selecionarResultado(resultadosFiltrados.length - 1);
+                    }
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    if (resultadoSelecionadoIndex >= 0) {
+                        document.querySelector('#pkName').value =
+                            resultadosFiltrados[resultadoSelecionadoIndex].name;
+                        document.querySelector('#resultados').innerHTML = '';
+                    }
+                    break;
+            }
+        }
+
+        document.addEventListener('click', function (event) {
+            const searchContainer = document.querySelector('#search-container');
+            if (!searchContainer.contains(event.target)) {
+                document.querySelector('#resultados').innerHTML = '';
+            }
+        });
+    </script>
+</body>
+
+</html>
